@@ -68,7 +68,7 @@ python train.py  --source_path dataset/mipnerf360/garden --model_path output/gar
 
 Train FSGS on DUST3R point cloud
 ```
-python train.py  --source_path dataset/dust/bicycle_large --model_path output/garden  --eval  --n_views 3 --depth_pseudo_weight 0.03
+python train.py  --source_path dataset/dust/bicycle_large --model_path output/bicycle_large  --eval  --n_views 3 --depth_pseudo_weight 0.03
 ```
 
 
