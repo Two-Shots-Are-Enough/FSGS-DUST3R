@@ -27,7 +27,7 @@ import time
 from tqdm import tqdm
 
 from utils.graphics_utils import getWorld2View2
-from utils.pose_utils import generate_ellipse_path, generate_spiral_path
+from utils.pose_utils import generate_ellipse_path, generate_spiral_path, generate_dust3r_path
 from utils.general_utils import vis_depth
 
 
@@ -61,6 +61,8 @@ def render_video(source_path, model_path, iteration, views, gaussians, pipeline,
         render_poses = generate_spiral_path(np.load(source_path + '/poses_bounds.npy'))
     elif source_path.find('360') != -1:
         render_poses = generate_ellipse_path(views)
+    elif source_path.find('dust') != -1:
+        render_poses = generate_dust3r_path(np.load(source_path + '/poses_bounds.npy'))
 
     size = (view.original_image.shape[2], view.original_image.shape[1])
     fourcc = cv2.VideoWriter_fourcc(*'XVID')

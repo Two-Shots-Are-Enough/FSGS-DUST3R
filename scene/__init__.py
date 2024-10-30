@@ -18,7 +18,7 @@ from scene.dataset_readers import sceneLoadTypeCallbacks
 from scene.gaussian_model import GaussianModel
 from arguments import ModelParams
 from utils.camera_utils import cameraList_from_camInfos, camera_to_JSON
-from utils.pose_utils import generate_random_poses_llff, generate_random_poses_360
+from utils.pose_utils import generate_random_poses_llff, generate_random_poses_360, generate_dust3r_path
 from scene.cameras import PseudoCamera
 
 class Scene:
@@ -44,12 +44,26 @@ class Scene:
         self.test_cameras = {}
         self.pseudo_cameras = {}
 
+        print(f"Checking dataset type with source path: {args.source_path}")
+        
         if os.path.exists(os.path.join(args.source_path, "sparse")):
+            print("Recognized COLMAP dataset structure in sparse/ folder.")
             scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval, args.n_views)
+        
         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):
             print("Found transforms_train.json file, assuming Blender data set!")
             scene_info = sceneLoadTypeCallbacks["Blender"](args.source_path, args.white_background, args.eval, args.n_views)
+        
+        elif os.path.exists(os.path.join(args.source_path, "sparse/0/images.txt")) and os.path.exists(os.path.join(args.source_path, "sparse/0/cameras.txt")):
+            print("Found images.txt and cameras.txt in sparse/0, assuming DUST3R data set!")
+            # Dust3r 경로 전달
+            scene_info = sceneLoadTypeCallbacks["Dust3r"](os.path.join(args.source_path, "sparse/0"), args.images, args.eval, args.n_views)
+        
         else:
+            print("Error: Could not recognize scene type. Dataset structure may not match expectations.")
+            print(f"Expected COLMAP structure: {os.path.join(args.source_path, 'sparse')}")
+            print(f"Expected Blender file: {os.path.join(args.source_path, 'transforms_train.json')}")
+            print(f"Expected Dust3r structure: {os.path.join(args.source_path, 'sparse/0/images.txt')} and {os.path.join(args.source_path, 'sparse/0/cameras.txt')}")
             assert False, "Could not recognize scene type!"
 
 

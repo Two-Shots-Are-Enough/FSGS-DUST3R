@@ -31,27 +31,8 @@ from pathlib import Path
 from plyfile import PlyData, PlyElement
 from utils.sh_utils import SH2RGB
 from scene.gaussian_model import BasicPointCloud
-
-class CameraInfo(NamedTuple):
-    uid: int
-    R: np.array
-    T: np.array
-    FovY: np.array
-    FovX: np.array
-    image: np.array
-    image_path: str
-    image_name: str
-    width: int
-    height: int
-    mask: np.array
-    bounds: np.array
-
-class SceneInfo(NamedTuple):
-    point_cloud: BasicPointCloud
-    train_cameras: list
-    test_cameras: list
-    nerf_normalization: dict
-    ply_path: str
+from scene.dust_dataset_readers import readDust3rSceneInfo
+from scene.scene_definitions import CameraInfo, SceneInfo
 
 def getNerfppNorm(cam_info):
     def get_center_and_diag(cam_centers):
@@ -163,10 +144,14 @@ def readColmapCameras2(cam_extrinsics, cam_intrinsics, images_folder):
 
 def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, path, rgb_mapping):
     cam_infos = []
+    
+    if len(rgb_mapping) != len(cam_extrinsics):
+        print(f"Warning: The number of images in rgb_mapping ({len(rgb_mapping)}) does not match the number of cameras ({len(cam_extrinsics)}) in cam_extrinsics.")
+        rgb_mapping = rgb_mapping[:len(cam_extrinsics)]
+
     for idx, key in enumerate(sorted(cam_extrinsics.keys())):
         sys.stdout.write('\r')
-        # the exact output you're looking for:
-        sys.stdout.write("Reading camera {}/{}".format(idx+1, len(cam_extrinsics)))
+        sys.stdout.write(f"Reading camera {idx+1}/{len(cam_extrinsics)}")
         sys.stdout.flush()
 
         extr = cam_extrinsics[key]
@@ -179,31 +164,38 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, path, rgb_m
         T = np.array(extr.tvec)
         bounds = np.load(os.path.join(path, 'poses_bounds.npy'))[idx, -2:]
 
-        if intr.model=="SIMPLE_PINHOLE" or intr.model=="SIMPLE_RADIAL":
+        if intr.model == "SIMPLE_PINHOLE" or intr.model == "SIMPLE_RADIAL":
             focal_length_x = intr.params[0]
             FovY = focal2fov(focal_length_x, height)
             FovX = focal2fov(focal_length_x, width)
-        elif intr.model=="PINHOLE":
+        elif intr.model == "PINHOLE":
             focal_length_x = intr.params[0]
             focal_length_y = intr.params[1]
             FovY = focal2fov(focal_length_y, height)
             FovX = focal2fov(focal_length_x, width)
         else:
-            assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
+            raise ValueError("Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!")
 
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
-        rgb_path = rgb_mapping[idx]   # os.path.join(images_folder, rgb_mapping[idx])
-        rgb_name = os.path.basename(rgb_path).split(".")[0]
-        image = Image.open(rgb_path)
+        
+        # Safeguard for rgb_mapping length issues
+        if idx < len(rgb_mapping):
+            rgb_path = rgb_mapping[idx]   
+            image = Image.open(rgb_path)
+        else:
+            print(f"Warning: Missing RGB mapping for camera {key}. Skipping this camera.")
+            continue
 
-        cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image, image_path=image_path,
-                image_name=image_name, width=width, height=height, mask=None, bounds=bounds)
+        cam_info = CameraInfo(
+            uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
+            image_path=image_path, image_name=image_name,
+            width=width, height=height, mask=None, bounds=bounds
+        )
         cam_infos.append(cam_info)
 
     sys.stdout.write('\n')
     return cam_infos
-
 
 def farthest_point_sampling(points, k):
     """
@@ -284,9 +276,11 @@ def readColmapSceneInfo(path, images, eval, n_views=0, llffhold=8):
     pcd = fetchPly(ply_path)
 
 
-    reading_dir = "images" if images == None else images
-    rgb_mapping = [f for f in sorted(glob.glob(os.path.join(path, reading_dir, '*')))
-                   if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')]
+    reading_dir = "images" if images is None else images
+    images_folder = os.path.join(path, reading_dir)
+    print(f"Images folder path: {images_folder}")
+    rgb_mapping = [f for f in sorted(glob.glob(os.path.join(images_folder, '*'))) if f.endswith(('JPG', 'jpg', 'png'))]
+    print(f"Found {len(rgb_mapping)} images in {images_folder}")
     cam_extrinsics = {cam_extrinsics[k].name: cam_extrinsics[k] for k in cam_extrinsics}
     cam_infos_unsorted = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics,
                              images_folder=os.path.join(path, reading_dir),  path=path, rgb_mapping=rgb_mapping)
@@ -419,5 +413,6 @@ def readNerfSyntheticInfo(path, white_background, eval, n_views=0, extension=".p
 
 sceneLoadTypeCallbacks = {
     "Colmap": readColmapSceneInfo,
-    "Blender" : readNerfSyntheticInfo
+    "Blender" : readNerfSyntheticInfo,
+    "Dust3r": readDust3rSceneInfo
 }

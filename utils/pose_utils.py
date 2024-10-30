@@ -312,3 +312,27 @@ def generate_random_poses_360(views, n_frames=10000, z_variation=0.1, z_phase=0)
         render_pose[:3, 1:3] *= -1
         render_poses.append(np.linalg.inv(render_pose))
     return render_poses
+
+def generate_dust3r_path(poses_bounds, n_frames=180, scale_factor=0.8):
+    
+    print("Loaded poses_bounds shape:", poses_bounds.shape)
+    poses = poses_bounds[:, :12].reshape(-1, 3, 4)  # (N, 12) -> (N, 3, 4)
+    print("Loaded poses shape:", poses.shape)
+    bounds = poses_bounds[:, 12:]
+    print("Loaded bounds shape:", bounds.shape)
+    near_bounds, far_bounds = poses_bounds[:, -2], poses_bounds[:, -1]
+
+    avg_pose = poses_avg(poses)
+    center, _ = avg_pose[:3, 3], avg_pose[:3, 2]
+
+    scale = scale_factor / (np.linalg.norm(poses[:, :3, 3], axis=1).max())
+    poses[:, :3, 3] *= scale
+
+    render_poses = []
+    for theta in np.linspace(0., 2. * np.pi, n_frames):
+        cam_pos = center + np.array([np.cos(theta), 0, np.sin(theta)]) * scale
+        view_dir = center - cam_pos
+        render_pose = viewmatrix(view_dir, avg_pose[:3, 1], cam_pos)
+        render_poses.append(render_pose)
+
+    return np.array(render_poses)

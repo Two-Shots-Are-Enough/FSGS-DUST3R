@@ -2,22 +2,10 @@
 
 
 
-[//]: # (###  [Project]&#40;https://zehaozhu.github.io/FSGS/&#41; | [Arxiv]&#40;https://arxiv.org/abs/2312.00451&#41;)
-
-[![Paper](https://img.shields.io/badge/cs.CV-Paper-b31b1b?logo=arxiv&logoColor=red)](https://arxiv.org/abs/2312.00451)
-[![Project Page](https://img.shields.io/badge/FSGS-Website-blue?logo=googlechrome&logoColor=blue)](https://zehaozhu.github.io/FSGS/)
-[![Video](https://img.shields.io/badge/YouTube-Video-c4302b?logo=youtube&logoColor=red)](https://youtu.be/CarJgsx3DQY)
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FVITA-Group%2FFSGS&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
-
+[//]: # (###  [Original FSGS Repo]&#40;https://zehaozhu.github.io/FSGS/&#41; | [Arxiv]&#40;https://arxiv.org/abs/2312.00451&#41;)
 
 
 ---------------------------------------------------
-<p align="center" >
-  <a href="">
-    <img src="https://github.com/zhiwenfan/zhiwenfan.github.io/blob/master/Homepage_files/videos/FSGS_gif.gif?raw=true" alt="demo" width="85%">
-  </a>
-</p>
-
 
 ## Environmental Setups
 We provide install method based on Conda package and environment management:
@@ -49,6 +37,10 @@ unzip -d mipnerf360 360_v2.zip
 python tools/colmap_360.py
 ``` 
 
+For DUST3R Usages:
+```
+python tools/dust3r_poses.py
+```
 
 We use the latest version of colmap to preprocess the datasets. If you meet issues on installing colmap, we provide a docker option. 
 ``` 
@@ -73,6 +65,11 @@ Train FSGS on MipNeRF-360 dataset with 24 views
 ``` 
 python train.py  --source_path dataset/mipnerf360/garden --model_path output/garden  --eval  --n_views 24 --depth_pseudo_weight 0.03  
 ``` 
+
+Train FSGS on DUST3R point cloud
+```
+python train.py  --source_path dataset/dust/bicycle_large --model_path output/garden  --eval  --n_views 3 --depth_pseudo_weight 0.03
+```
 
 
 ## Rendering
