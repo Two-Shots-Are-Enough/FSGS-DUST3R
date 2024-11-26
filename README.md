@@ -1,5 +1,4 @@
-# FSGS: Real-Time Few-Shot View Synthesis using Gaussian Splatting
-
+# FSGS Customized with DUSt3R
 
 
 [//]: # (###  [Original FSGS Repo]&#40;https://zehaozhu.github.io/FSGS/&#41; | [Arxiv]&#40;https://arxiv.org/abs/2312.00451&#41;)
@@ -102,9 +101,6 @@ Special thanks to the following awesome projects!
 - [MipNeRF-360](https://github.com/google-research/multinerf)
 
 ## Citation
-If you find our work useful for your project, please consider citing the following paper.
-
-
 ```
 @misc{zhu2023FSGS, 
 title={FSGS: Real-Time Few-Shot View Synthesis using Gaussian Splatting}, 
